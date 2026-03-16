@@ -1,0 +1,65 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "langchain-arp"
+version = "0.1.0"
+description = "LangChain Document Loader for reasoning.json — the Agentic Reasoning Protocol"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [
+    { name = "Sascha Deforth", email = "hello@truesource.studio" },
+]
+keywords = [
+    "langchain",
+    "arp",
+    "reasoning",
+    "ai",
+    "rag",
+    "hallucination",
+    "brand",
+    "agentic",
+    "document-loader",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "requests>=2.28.0",
+]
+
+[project.optional-dependencies]
+langchain = ["langchain-core>=0.1.0"]
+validation = ["jsonschema>=4.0.0"]
+all = ["langchain-core>=0.1.0", "jsonschema>=4.0.0"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "langchain-core>=0.1.0",
+    "jsonschema>=4.0.0",
+]
+
+[project.urls]
+Homepage = "https://arp-protocol.org"
+Documentation = "https://github.com/truesource-ai/langchain-arp"
+Repository = "https://github.com/truesource-ai/langchain-arp"
+Issues = "https://github.com/truesource-ai/langchain-arp/issues"
+Specification = "https://arp-protocol.org/spec"
+
+[tool.hatch.build.targets.wheel]
+packages = ["langchain_arp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
