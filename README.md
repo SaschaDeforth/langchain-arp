@@ -33,8 +33,8 @@ pip install "langchain-arp[all] @ git+https://github.com/975SDE/langchain-arp.gi
 ```python
 from langchain_arp import AgenticReasoningLoader
 
-# Load from a website
-loader = AgenticReasoningLoader("https://example.com")
+# Load from the ARP protocol website (dogfooding!)
+loader = AgenticReasoningLoader("https://arp-protocol.org")
 docs = loader.load()
 
 # Load from a local file
@@ -66,8 +66,8 @@ from langchain_arp import AgenticReasoningLoader
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 
-# Load reasoning directives
-loader = AgenticReasoningLoader("https://example.com")
+# Load reasoning directives from any website with reasoning.json
+loader = AgenticReasoningLoader("https://arp-protocol.org")
 docs = loader.load()
 
 # Add to vector store — your agent now knows how to reason about this brand
@@ -81,7 +81,7 @@ retriever = vectorstore.as_retriever()
 from langchain_arp import load_reasoning, load_reasoning_file
 
 # From URL
-docs = load_reasoning("https://example.com")
+docs = load_reasoning("https://arp-protocol.org")
 
 # From file
 docs = load_reasoning_file("./reasoning.json")
@@ -90,7 +90,7 @@ docs = load_reasoning_file("./reasoning.json")
 ## CLI
 
 ```bash
-python -m langchain_arp.loader https://example.com
+python -m langchain_arp.loader https://arp-protocol.org
 python -m langchain_arp.loader ./reasoning.json
 ```
 
