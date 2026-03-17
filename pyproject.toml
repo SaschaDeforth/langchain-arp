@@ -53,9 +53,9 @@ dev = [
 
 [project.urls]
 Homepage = "https://arp-protocol.org"
-Documentation = "https://github.com/truesource-ai/langchain-arp"
-Repository = "https://github.com/truesource-ai/langchain-arp"
-Issues = "https://github.com/truesource-ai/langchain-arp/issues"
+Documentation = "https://github.com/975SDE/langchain-arp"
+Repository = "https://github.com/975SDE/langchain-arp"
+Issues = "https://github.com/975SDE/langchain-arp/issues"
 Specification = "https://arp-protocol.org/spec"
 
 [tool.hatch.build.targets.wheel]
