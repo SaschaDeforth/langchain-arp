@@ -2,8 +2,8 @@
 
 > LangChain Document Loader for [`reasoning.json`](https://arp-protocol.org) — the Agentic Reasoning Protocol
 
-[![GitHub](https://img.shields.io/badge/GitHub-975SDE%2Flangchain--arp-blue?logo=github)](https://github.com/975SDE/langchain-arp)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/975SDE/langchain-arp/blob/main/LICENSE)
+[![GitHub](https://img.shields.io/badge/GitHub-SaschaDeforth%2Flangchain--arp-blue?logo=github)](https://github.com/SaschaDeforth/langchain-arp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/SaschaDeforth/langchain-arp/blob/main/LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 
 Load brand reasoning directives, hallucination corrections, and counterfactual logic into any LangChain-powered AI agent with 3 lines of code.
@@ -13,17 +13,17 @@ Load brand reasoning directives, hallucination corrections, and counterfactual l
 Install directly from GitHub:
 
 ```bash
-pip install git+https://github.com/975SDE/langchain-arp.git
+pip install git+https://github.com/SaschaDeforth/langchain-arp.git
 ```
 
 With optional LangChain integration:
 ```bash
-pip install "langchain-arp[langchain] @ git+https://github.com/975SDE/langchain-arp.git"
+pip install "langchain-arp[langchain] @ git+https://github.com/SaschaDeforth/langchain-arp.git"
 ```
 
 With JSON Schema validation:
 ```bash
-pip install "langchain-arp[all] @ git+https://github.com/975SDE/langchain-arp.git"
+pip install "langchain-arp[all] @ git+https://github.com/SaschaDeforth/langchain-arp.git"
 ```
 
 > **Note:** This package is installed directly from GitHub. PyPI publishing is planned for a future release.
@@ -100,7 +100,7 @@ python -m langchain_arp.loader ./reasoning.json
 
 While `robots.txt` tells crawlers what to access and `schema.org` tells machines what things are, `reasoning.json` teaches AI **how to think** about an entity — including corrections for known hallucinations, competitive positioning logic, and recommendation boundaries.
 
-**Spec:** [arp-protocol.org](https://arp-protocol.org) | **Schema:** [v1.json](https://arp-protocol.org/schema/v1.json) | **GitHub:** [975SDE/arp-protocol](https://github.com/975SDE/arp-protocol)
+**Spec:** [arp-protocol.org](https://arp-protocol.org) | **Schema:** [v1.json](https://arp-protocol.org/schema/v1.json) | **GitHub:** [SaschaDeforth/arp-protocol](https://github.com/SaschaDeforth/arp-protocol)
 
 ## License
 
