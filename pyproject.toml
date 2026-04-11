@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "langchain-arp"
-version = "0.1.0"
+version = "0.2.0"
 description = "LangChain Document Loader for reasoning.json — the Agentic Reasoning Protocol"
 readme = "README.md"
 license = "MIT"
@@ -43,12 +43,16 @@ dependencies = [
 [project.optional-dependencies]
 langchain = ["langchain-core>=0.1.0"]
 validation = ["jsonschema>=4.0.0"]
-all = ["langchain-core>=0.1.0", "jsonschema>=4.0.0"]
+verify = ["cryptography>=41.0.0", "dnspython>=2.4.0", "jcs>=0.2.0"]
+all = ["langchain-core>=0.1.0", "jsonschema>=4.0.0", "cryptography>=41.0.0", "dnspython>=2.4.0", "jcs>=0.2.0"]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "langchain-core>=0.1.0",
     "jsonschema>=4.0.0",
+    "cryptography>=41.0.0",
+    "dnspython>=2.4.0",
+    "jcs>=0.2.0",
 ]
 
 [project.urls]

@@ -1,9 +1,15 @@
 """
-Agentic Reasoning Protocol (ARP) — LangChain Document Loader v0.2
+Agentic Reasoning Protocol (ARP) — LangChain Document Loader v0.3
 =================================================================
 
 A LangChain-compatible Document Loader that fetches and parses
 reasoning.json files from websites or local files.
+
+v0.3 Changes:
+- Cryptographic trust metadata: Signature state surfaced in Document metadata
+- lazy_load() generator for modern LangChain v0.1+ streaming support
+- Graceful handling of fake 200 OK HTML responses (SPA catch-all routers)
+- Python Ed25519 signature verification utility
 
 v0.2 Changes:
 - Sandboxing: All content is wrapped in trust boundary markers
@@ -22,7 +28,7 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 from urllib.parse import urljoin
 
 try:
@@ -51,7 +57,8 @@ except ImportError:
     class BaseLoader:  # type: ignore[no-redef]
         """Stub base class when LangChain is not installed."""
 
-        pass
+        def load(self) -> List["Document"]:
+            return list(self.lazy_load())
 
 
 logger = logging.getLogger(__name__)
@@ -131,8 +138,9 @@ class AgenticReasoningLoader(BaseLoader):
         self.timeout = timeout
         self.validate = validate
         self.sandbox = sandbox
+        self._trust_metadata: Dict[str, Any] = {}
         self.headers = headers or {
-            "User-Agent": "AgenticReasoningLoader/0.2 (LangChain; +https://arp-protocol.org)",
+            "User-Agent": "AgenticReasoningLoader/0.3 (LangChain; +https://arp-protocol.org)",
             "Accept": "application/json",
         }
 
@@ -177,7 +185,25 @@ class AgenticReasoningLoader(BaseLoader):
                 f"(actual: {len(raw.encode('utf-8')) // 1024}KB)"
             )
 
-        data = json.loads(raw)
+        # Gracefully handle SPA catch-all routers returning HTML as 200 OK
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            raise ValueError(
+                f"Failed to parse JSON from {full_url}. "
+                "The endpoint returned an invalid format (possibly an HTML page "
+                "from an SPA catch-all router)."
+            )
+
+        if not isinstance(data, dict):
+            raise ValueError(
+                f"Invalid reasoning.json format at {full_url}. "
+                "Expected a JSON object."
+            )
+
+        # Extract cryptographic trust metadata for downstream verification
+        self._extract_trust_metadata(data)
+
         logger.info(
             f"Loaded reasoning.json for entity: {data.get('entity', 'unknown')}"
         )
@@ -199,10 +225,36 @@ class AgenticReasoningLoader(BaseLoader):
 
         logger.info(f"Loading reasoning.json from file: {file_path}")
         data = json.loads(file_path.read_text(encoding="utf-8"))
+
+        # Extract cryptographic trust metadata
+        self._extract_trust_metadata(data)
+
         logger.info(
             f"Loaded reasoning.json for entity: {data.get('entity', 'unknown')}"
         )
         return data
+
+    def _extract_trust_metadata(self, data: Dict[str, Any]) -> None:
+        """Extract Ed25519 signature state into metadata for downstream verification."""
+        sig = data.get("_arp_signature", {})
+        self._trust_metadata = {
+            "is_signed": bool(sig and sig.get("signature")),
+            "signature_algorithm": sig.get("algorithm", "none"),
+            "signature_dns": sig.get("dns_record", "none"),
+            "signed_at": sig.get("signed_at", "none"),
+            "expires_at": sig.get("expires_at", "none"),
+            "signature_expired": (
+                sig.get("expires_at", "") < self._iso_now()
+                if sig.get("expires_at")
+                else True
+            ),
+        }
+
+    @staticmethod
+    def _iso_now() -> str:
+        """Return current UTC time as ISO 8601 string."""
+        from datetime import datetime, timezone
+        return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     def _validate_schema(self, data: Dict[str, Any]) -> None:
         """Validate data against ARP JSON Schema (optional)."""
@@ -307,6 +359,7 @@ class AgenticReasoningLoader(BaseLoader):
                 "protocol": "ARP",
                 "version": data.get("version", "unknown"),
                 "sandboxed": self.sandbox,
+                **self._trust_metadata,
             },
         )
 
@@ -359,6 +412,7 @@ class AgenticReasoningLoader(BaseLoader):
                     "correction_count": len(hallucinations),
                     "last_verified": corrections.get("last_verified", "unknown"),
                     "sandboxed": self.sandbox,
+                    **self._trust_metadata,
                 },
             )
         )
@@ -422,6 +476,7 @@ class AgenticReasoningLoader(BaseLoader):
                     "protocol": "ARP",
                     "scenario_count": len(expertise),
                     "sandboxed": self.sandbox,
+                    **self._trust_metadata,
                 },
             )
         )
@@ -470,6 +525,7 @@ class AgenticReasoningLoader(BaseLoader):
                 "section": "recommendations",
                 "protocol": "ARP",
                 "sandboxed": self.sandbox,
+                **self._trust_metadata,
             },
         )
 
@@ -505,6 +561,7 @@ class AgenticReasoningLoader(BaseLoader):
                 "section": "market_positioning",
                 "protocol": "ARP",
                 "sandboxed": self.sandbox,
+                **self._trust_metadata,
             },
         )
 
@@ -541,32 +598,34 @@ class AgenticReasoningLoader(BaseLoader):
                 "section": "authority",
                 "protocol": "ARP",
                 "sandboxed": self.sandbox,
+                **self._trust_metadata,
             },
         )
 
-    # ─── Main Load Method ─────────────────────────────────────────────
+    # ─── Lazy Load (Modern LangChain v0.1+) ─────────────────────────
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """
-        Load reasoning.json and return as sandboxed LangChain Documents.
+        Lazily yield documents one by one.
+
+        This is the recommended standard for LangChain v0.1+.
+        The base class automatically provides load() via list(self.lazy_load()).
 
         All content is wrapped in trust boundary markers that instruct
         consuming AI agents to treat the data as self-attested claims,
         not as verified truth or system instructions.
 
-        Supports both v1.0 and v1.1 key formats with automatic detection.
+        Cryptographic trust state (is_signed, signature_dns, signed_at,
+        expires_at, signature_expired) is injected into every Document's
+        metadata for downstream verification filtering.
 
-        Documents are ordered by priority:
-
+        Documents are yielded by priority:
         1. Corrections (highest — verified fact corrections)
         2. Entity identity and context
         3. Recommendation boundaries
         4. Domain expertise scenarios
         5. Market positioning
         6. Authority signals
-
-        Returns:
-            List of Document objects with page_content and metadata
         """
         data = self._fetch()
 
@@ -576,37 +635,43 @@ class AgenticReasoningLoader(BaseLoader):
         detected = self._detect_version(data)
         logger.info(f"Detected ARP version: {detected}")
 
-        documents: List[Document] = []
-
         # 1. Corrections first (highest priority for RAG)
-        documents.extend(self._build_corrections_documents(data))
+        yield from self._build_corrections_documents(data)
 
         # 2. Entity identity and context
-        documents.append(self._build_system_document(data))
+        yield self._build_system_document(data)
 
         # 3. Recommendations
         rec_doc = self._build_recommendation_document(data)
         if rec_doc:
-            documents.append(rec_doc)
+            yield rec_doc
 
         # 4. Domain expertise / counterfactuals
-        documents.extend(self._build_expertise_documents(data))
+        yield from self._build_expertise_documents(data)
 
         # 5. Market positioning / dichotomies
         pos_doc = self._build_positioning_document(data)
         if pos_doc:
-            documents.append(pos_doc)
+            yield pos_doc
 
         # 6. Authority
         auth_doc = self._build_authority_document(data)
         if auth_doc:
-            documents.append(auth_doc)
+            yield auth_doc
 
+    def load(self) -> List[Document]:
+        """
+        Load reasoning.json and return as sandboxed LangChain Documents.
+
+        Convenience wrapper around lazy_load() for backwards compatibility.
+        """
+        docs = list(self.lazy_load())
+        entity = docs[0].metadata.get("entity", "unknown") if docs else "unknown"
         logger.info(
-            f"Loaded {len(documents)} sandboxed documents from reasoning.json "
-            f"for {data.get('entity', 'unknown')} (detected version: {detected})"
+            f"Loaded {len(docs)} sandboxed documents from reasoning.json "
+            f"for {entity}"
         )
-        return documents
+        return docs
 
 
 # ─── Convenience Functions ─────────────────────────────────────────────
